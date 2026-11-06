@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planificador de turnos</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #18251f;
+      background: #f5f7f3;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --ink: #18251f;
+      --muted: #718078;
+      --line: #e5ebe5;
+      --green: #176b4a;
+      --green-dark: #10563b;
+      --mint: #e8f3ec;
+      --paper: #fff;
+      --shadow: 0 18px 48px rgb(34 55 43 / 7%);
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 28px 72px;
+      background:
+        radial-gradient(ellipse at 12% 0%, rgb(219 235 220 / 70%), transparent 31rem),
+        #f5f7f3;
+    }
+    button, input, textarea { font: inherit; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 56px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 13px;
+      color: white;
+      background: var(--green);
+      box-shadow: 0 7px 16px rgb(23 107 74 / 20%);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -.05em;
+    }
+    .brand-name { font-size: 14px; font-weight: 750; letter-spacing: -.02em; }
+    .brand-subtitle { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .hero { max-width: 760px; margin: 0 auto 30px; text-align: center; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 7px; height: 7px; border-radius: 50%; background: #49a878; content: ""; }
+    h1, h2, p { margin-top: 0; }
+    h1 { margin-bottom: 12px; font-size: clamp(34px, 5vw, 52px); font-weight: 750; letter-spacing: -.055em; line-height: 1.05; }
+    .hero-copy { max-width: 590px; margin: 0 auto; color: var(--muted); font-size: 16px; line-height: 1.7; }
+    .hero-tags { display: flex; justify-content: center; gap: 9px; flex-wrap: wrap; margin-top: 22px; }
+    .hero-tags span { padding: 7px 12px; border: 1px solid #e2e9e1; border-radius: 999px; color: #52635a; background: rgb(255 255 255 / 68%); font-size: 12px; font-weight: 650; }
+    form { display: grid; gap: 18px; }
+    .panel {
+      margin: 0;
+      padding: 26px;
+      border: 1px solid rgb(222 231 222 / 90%);
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+    .section-heading { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+    .step-number {
+      display: grid;
+      flex: 0 0 34px;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid #d8e9dc;
+      border-radius: 11px;
+      color: var(--green);
+      background: var(--mint);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    h2 { margin-bottom: 5px; font-size: 19px; font-weight: 730; letter-spacing: -.025em; }
+    .section-copy { margin-bottom: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .field-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .field label, .employee label { display: block; margin: 0 0 7px; color: #48584f; font-size: 12px; font-weight: 680; }
+    .field input, .employee input:not([type="checkbox"]), textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid #dce5dc;
+      border-radius: 10px;
+      outline: none;
+      color: var(--ink);
+      background: #fcfdfb;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    input:focus, textarea:focus { border-color: #57a47b; background: white; box-shadow: 0 0 0 3px rgb(65 151 103 / 13%); }
+    input::placeholder, textarea::placeholder { color: #a0aaa3; }
+    .note {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin: 22px 0 0;
+      padding: 15px 17px;
+      border: 1px solid #f1e4c5;
+      border-radius: 13px;
+      color: #6d5933;
+      background: #fffaf0;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+    .note-icon { display: grid; flex: 0 0 23px; width: 23px; height: 23px; place-items: center; border-radius: 50%; color: #8b671c; background: #f7ebc9; font-size: 13px; font-weight: 800; }
+    .team-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .employee {
+      min-width: 0;
+      margin: 0;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(145deg, #fff, #fbfcfa);
+      transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    .employee:hover { transform: translateY(-2px); border-color: #c9ddcd; box-shadow: 0 10px 24px rgb(34 55 43 / 6%); }
+    .employee legend { padding: 0 7px; color: var(--ink); font-size: 13px; font-weight: 750; }
+    .employee label { margin-top: 12px; }
+    .employee label:first-of-type { margin-top: 0; }
+    .employee input:not([type="checkbox"]) { min-height: 39px; padding: 8px 10px; background: white; font-size: 13px; }
+    .employee input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--green); }
+    .checks { display: flex; gap: 7px; flex-wrap: wrap; }
+    .checks label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 6px 9px;
+      border: 1px solid #e4eae4;
+      border-radius: 8px;
+      color: #59665e;
+      background: white;
+      font-size: 11px;
+      font-weight: 580;
+      cursor: pointer;
+    }
+    .checks label:has(input:checked) { border-color: #c4decb; color: var(--green-dark); background: #f0f7f1; }
+    .fixed-field { margin-top: 22px; }
+    .fixed-field textarea { display: block; min-height: 82px; resize: vertical; font-size: 13px; line-height: 1.55; }
+    .fixed-hint { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
+    button {
+      display: inline-flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 20px;
+      border: 0;
+      border-radius: 11px;
+      color: white;
+      background: var(--green);
+      box-shadow: 0 8px 18px rgb(23 107 74 / 18%);
+      font-size: 13px;
+      font-weight: 720;
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease, box-shadow .18s ease;
+    }
+    button:hover:not(:disabled) { transform: translateY(-1px); background: var(--green-dark); box-shadow: 0 11px 22px rgb(23 107 74 / 23%); }
+    button:focus-visible { outline: 3px solid #9dc9ac; outline-offset: 3px; }
+    button:disabled { opacity: .58; cursor: wait; }
+    #generate { width: 100%; min-height: 54px; }
+    #generate::after { content: "→"; font-size: 17px; }
+    .message { min-height: 0; margin: 0; padding: 0; color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+    .message:not(:empty) { padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: white; }
+    .message.error { border-color: #f0d0cc; color: #9c342b; background: #fff7f5; }
+    .message.success { border-color: #cde5d3; color: #226442; background: #f3faf4; }
+    #result { margin-top: 22px; }
+    .result-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .result-badge { padding: 6px 10px; border: 1px solid #cde5d3; border-radius: 999px; color: #226442; background: #f3faf4; font-size: 11px; font-weight: 700; }
+    #result-status, #approval-status { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .table-wrap { overflow: auto; max-height: 580px; border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: white; font-size: 12px; }
+    th, td { min-width: 130px; padding: 12px 14px; border-bottom: 1px solid #edf0ec; text-align: left; vertical-align: top; line-height: 1.55; }
+    thead th { position: sticky; z-index: 1; top: 0; color: #58665d; background: #f5f8f4; font-size: 11px; font-weight: 750; }
+    tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: #fbfcfa; }
+    tbody th { min-width: 116px; color: #3a4b41; font-size: 11px; font-weight: 700; }
+    .secondary { color: #216442; background: #eaf5ed; box-shadow: none; }
+    .secondary:hover:not(:disabled) { color: white; background: var(--green); box-shadow: 0 8px 18px rgb(23 107 74 / 18%); }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      body { padding: 20px 18px 52px; }
+      .topbar { margin-bottom: 42px; }
+      .field-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .team-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 16px 13px 40px; }
+      .topbar { margin-bottom: 34px; }
+      .hero { margin-bottom: 24px; }
+      .hero-copy { font-size: 14px; }
+      .panel { padding: 19px 16px; border-radius: 15px; }
+      .field-grid { gap: 11px; }
+      .section-heading { gap: 11px; }
+      .note { padding: 12px; }
+      th, td { min-width: 112px; padding: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true">TT</div>
+      <div>
+        <div class="brand-name">Turno Claro</div>
+        <div class="brand-subtitle">Planificación de equipo</div>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div class="eyebrow">Planificación inteligente</div>
+      <h1 id="page-title">Un buen turno empieza<br>con un buen plan.</h1>
+      <p class="hero-copy">Organiza jornadas equilibradas en minutos. Define las necesidades de tu equipo y deja que el solver encuentre una propuesta verificable.</p>
+      <div class="hero-tags" aria-label="Características">
+        <span>4 semanas</span>
+        <span>3 turnos diarios</span>
+        <span>Verificación independiente</span>
+      </div>
+    </section>
+
+    <div class="note">
+      <span class="note-icon" aria-hidden="true">!</span>
+      <span>Este prototipo aplica las reglas configuradas; no interpreta ni certifica automáticamente el convenio colectivo. Comprueba la normativa aplicable y revisa el resultado antes de publicarlo.</span>
+    </div>
+
+    <form id="scenario-form">
+      <section class="panel" aria-labelledby="period-heading">
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div>
+            <h2 id="period-heading">Periodo y cobertura</h2>
+            <p class="section-copy">Elige el inicio y las personas necesarias en cada franja, cada día.</p>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field"><label for="start-date">Lunes de inicio</label><input id="start-date" type="date" required></div>
+          <div class="field"><label for="cover-morning">Mañana · 06:00–14:00</label><input id="cover-morning" type="number" min="1" required></div>
+          <div class="field"><label for="cover-afternoon">Tarde · 14:00–22:00</label><input id="cover-afternoon" type="number" min="1" required></div>
+          <div class="field"><label for="cover-night">Noche · 22:00–06:00</label><input id="cover-night" type="number" min="1" required></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="team-heading">
+        <div class="section-heading">
+          <span class="step-number" aria-hidden="true">02</span>
+          <div>
+            <h2 id="team-heading">Tu equipo</h2>
+            <p class="section-copy">Configura contratos, disponibilidad, habilitaciones y preferencias.</p>
+          </div>
+        </div>
+        <div id="employees" class="team-grid"></div>
+        <div class="fixed-field">
+          <label for="fixed-assignments">Turnos ya asignados</label>
+          <textarea id="fixed-assignments" rows="3" placeholder="employee-1, 2026-11-03, morning"></textarea>
+          <p class="fixed-hint">Una línea por turno. Formato: ID de empleado, fecha AAAA-MM-DD, morning / afternoon / night.</p>
+        </div>
+      </section>
+      <button id="generate" type="submit">Generar y verificar cuadrante</button>
+    </form>
+
+    <div id="message" class="message" role="status" aria-live="polite"></div>
+    <section id="result" class="panel" aria-labelledby="result-heading" hidden>
+      <div class="result-title">
+        <div>
+          <h2 id="result-heading">Tu propuesta de cuadrante</h2>
+          <p id="result-status"></p>
+        </div>
+        <span class="result-badge">Verificado</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Fecha</th><th scope="col">Mañana</th><th scope="col">Tarde</th><th scope="col">Noche</th></tr></thead>
+          <tbody id="schedule-body"></tbody>
+        </table>
+      </div>
+      <p id="approval-status"></p>
+      <button id="approve" class="secondary" type="button">Aprobar cuadrante</button>
+    </section>
+  </main>
+
+  <script>
+    const shiftOptions = [
+      ["morning", "Mañana"],
+      ["afternoon", "Tarde"],
+      ["night", "Noche"]
+    ];
+    let currentScheduleId = null;
+    const form = document.getElementById("scenario-form");
+    const message = document.getElementById("message");
+    const result = document.getElementById("result");
+    const generateButton = document.getElementById("generate");
+
+    function showMessage(text, kind = "") {
+      message.textContent = text;
+      message.className = `message ${kind}`;
+    }
+
+    function renderEmployees(employees) {
+      const container = document.getElementById("employees");
+      container.replaceChildren();
+      for (const employee of employees) {
+        const card = document.createElement("fieldset");
+        card.className = "employee";
+        const legend = document.createElement("legend");
+        legend.textContent = employee.name;
+        card.append(legend);
+
+        const nameLabel = document.createElement("label");
+        nameLabel.textContent = "Nombre";
+        const name = document.createElement("input");
+        name.dataset.field = "name";
+        name.value = employee.name;
+        name.required = true;
+        nameLabel.append(name);
+        card.append(nameLabel);
+
+        const maxLabel = document.createElement("label");
+        maxLabel.textContent = "Máximo de turnos por semana (contrato)";
+        const maxShifts = document.createElement("input");
+        maxShifts.dataset.field = "max-shifts";
+        maxShifts.type = "number";
+        maxShifts.min = "0";
+        maxShifts.max = "5";
+        maxShifts.value = employee.max_shifts_per_week;
+        maxShifts.required = true;
+        maxLabel.append(maxShifts);
+        card.append(maxLabel);
+
+        const unavailableLabel = document.createElement("label");
+        unavailableLabel.textContent = "Vacaciones/días no disponibles (AAAA-MM-DD)";
+        const unavailable = document.createElement("input");
+        unavailable.dataset.field = "unavailable";
+        unavailable.placeholder = "2026-11-04, 2026-11-05";
+        unavailableLabel.append(unavailable);
+        card.append(unavailableLabel);
+
+        for (const [group, title, selected] of [
+          ["eligible", "Puede cubrir", employee.eligible_shifts],
+          ["preferred", "Prefiere", employee.preferred_shifts]
+        ]) {
+          const groupTitle = document.createElement("label");
+          groupTitle.textContent = title;
+          card.append(groupTitle);
+          const choices = document.createElement("div");
+          choices.className = "checks";
+          for (const [shift, label] of shiftOptions) {
+            const optionLabel = document.createElement("label");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.dataset.group = group;
+            checkbox.dataset.shift = shift;
+            checkbox.checked = selected.includes(shift);
+            optionLabel.append(checkbox, document.createTextNode(label));
+            choices.append(optionLabel);
+          }
+          card.append(choices);
+        }
+        container.append(card);
+      }
+    }
+
+    async function loadDefaults() {
+      const response = await fetch("/api/scenario");
+      if (!response.ok) throw new Error("No se pudo cargar el escenario inicial.");
+      const scenario = await response.json();
+      document.getElementById("start-date").value = scenario.start_date;
+      document.getElementById("cover-morning").value = scenario.coverage.morning;
+      document.getElementById("cover-afternoon").value = scenario.coverage.afternoon;
+      document.getElementById("cover-night").value = scenario.coverage.night;
+      renderEmployees(scenario.employees);
+    }
+
+    function buildRequest() {
+      const employees = [...document.querySelectorAll(".employee")].map((card, index) => ({
+        id: `employee-${index + 1}`,
+        name: card.querySelector('[data-field="name"]').value.trim(),
+        max_shifts_per_week: Number(card.querySelector('[data-field="max-shifts"]').value),
+        unavailable_dates: card.querySelector('[data-field="unavailable"]').value
+          .split(",").map(value => value.trim()).filter(Boolean),
+        eligible_shifts: [...card.querySelectorAll('[data-group="eligible"]:checked')]
+          .map(checkbox => checkbox.dataset.shift),
+        preferred_shifts: [...card.querySelectorAll('[data-group="preferred"]:checked')]
+          .map(checkbox => checkbox.dataset.shift)
+      }));
+      const fixedAssignments = document.getElementById("fixed-assignments").value
+        .split(/\r?\n/).map(line => line.trim()).filter(Boolean).map(line => {
+          const [employee_id, day, shift, ...extra] = line.split(",").map(value => value.trim());
+          if (!employee_id || !day || !shift || extra.length) {
+            throw new Error("Cada turno fijo debe tener el formato: ID empleado, fecha, turno.");
+          }
+          return {employee_id, date: day, shift};
+        });
+      return {
+        start_date: document.getElementById("start-date").value,
+        coverage: {
+          morning: Number(document.getElementById("cover-morning").value),
+          afternoon: Number(document.getElementById("cover-afternoon").value),
+          night: Number(document.getElementById("cover-night").value)
+        },
+        employees,
+        fixed_assignments: fixedAssignments
+      };
+    }
+
+    function renderSchedule(schedule) {
+      const byDay = new Map();
+      for (const assignment of schedule.assignments) {
+        if (!byDay.has(assignment.date)) byDay.set(assignment.date, {});
+        const shifts = byDay.get(assignment.date);
+        shifts[assignment.shift] ??= [];
+        shifts[assignment.shift].push(assignment.employee_name);
+      }
+      const rows = [...byDay.entries()].sort(([first], [second]) => first.localeCompare(second));
+      const body = document.getElementById("schedule-body");
+      body.replaceChildren();
+      for (const [day, shifts] of rows) {
+        const row = document.createElement("tr");
+        const dateCell = document.createElement("th");
+        dateCell.scope = "row";
+        dateCell.textContent = day;
+        row.append(dateCell);
+        for (const [shift] of shiftOptions) {
+          const cell = document.createElement("td");
+          cell.textContent = (shifts[shift] || []).join(", ");
+          row.append(cell);
+        }
+        body.append(row);
+      }
+      currentScheduleId = schedule.id;
+      document.getElementById("result-status").textContent =
+        `Estado: ${schedule.status}. Verificación independiente: correcta. Revisión humana pendiente.`;
+      document.getElementById("approval-status").textContent =
+        "Aún no aprobado para publicación.";
+      document.getElementById("approve").disabled = false;
+      result.hidden = false;
+    }
+
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      generateButton.disabled = true;
+      result.hidden = true;
+      showMessage("Calculando y verificando…");
+      try {
+        const response = await fetch("/api/schedules", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(buildRequest())
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          const details = payload.details ? `\n${payload.details.join("\n")}` : "";
+          throw new Error(`${payload.error || "No se pudo generar el cuadrante."}${details}`);
+        }
+        renderSchedule(payload);
+        showMessage("Cuadrante generado y verificado. Revisa las asignaciones antes de aprobar.", "success");
+      } catch (error) {
+        showMessage(error.message, "error");
+      } finally {
+        generateButton.disabled = false;
+      }
+    });
+
+    document.getElementById("approve").addEventListener("click", async () => {
+      if (!currentScheduleId) return;
+      const button = document.getElementById("approve");
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/schedules/${currentScheduleId}/approve`, {method: "POST"});
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || "No se pudo aprobar el cuadrante.");
+        document.getElementById("approval-status").textContent = "Aprobado por revisión humana.";
+        showMessage("Cuadrante aprobado. La aprobación es temporal y se pierde al reiniciar el servidor.", "success");
+      } catch (error) {
+        button.disabled = false;
+        showMessage(error.message, "error");
+      }
+    });
+
+    loadDefaults().catch(error => showMessage(error.message, "error"));
+  </script>
+</body>
+</html>
